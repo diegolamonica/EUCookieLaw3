@@ -317,21 +317,33 @@ because it
 |id                       | Available Properties | Purpose                     |
 |-------------------------|----------------------|-----------------------------|
 | `dialog-container`      | `html`               | HTML Template for this part |
+|                         | `classes`            | Classes (in the space-separated format) to be applied to the dialog container
 | `dialog`                | `html`               | HTML Template for this part |
+|                         | `classes`            | Classes (in the space-separated format) to be applied to the dialog
 | `dialog-content`        | `html`               | HTML Template for this part |
+|                         | `classes`            | Classes (in the space-separated format) to be applied to the dialog content
 | `header-container`      | `html`               | HTML Template for this part |
 |                         | `titleTag`           | Tag name for the title (default value is `strong`) |
 |                         | `content`            | HTML inside the title element (default is `Cookie Policy agreement`) |
+|                         | `classes`            | Classes (in the space-separated format) to be applied to the header container
 | `body-container`        | `html`               | HTML Template for this part |
+|                         | `classes`            | Classes (in the space-separated format) to be applied to the body container
 | `body-text-content`     | `html`               | HTML Template for this part |
+|                         | `classes`            | Classes (in the space-separated format) to be applied to the body text container
 |                         | `content`            | HTML inside the modal body element (default is `This site uses cookies`) |
 | `body-button-container` | `html`               | HTML Template for this part |
+|                         | `classes`            | Classes (in the space-separated format) to be applied to the body button container
 | `review-button`         | `html`               | HTML Template for this part |
 |                         | `content`            | HTML inside the review consent button (default is `Review consents`) |
 |                         | `classes`            | Classes (in the space-separated format) to be applied to the review button item
 | `cookie-group-list`     | `html`               | HTML Template for this part |
+|                         | `classes`            | Classes (in the space-separated format) to be applied to the cookie group list
 | `cookie-group-list-item`| `html`               | HTML Template for this part |
+|                         | `classes`            | Classes (in the space-separated format) to be applied to each cookie group list item
 | `button-container`      | `html`               | HTML Template for this part |
+|                         | `classes`            | Classes (in the space-separated format) to be applied to the button container
+| `close-button`          | `content`            | HTML inside the close button. Default value is `close` |
+|                         | `classes`            | Classes (in the space-separated format) to be applied to the close button
 | `footer-container`      | `html`               | HTML Template for this part |
 
 ##### Example of usage

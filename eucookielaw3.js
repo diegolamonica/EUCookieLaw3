@@ -22,7 +22,7 @@ window.EUCookieLaw = function ( settings ) {
 		NodeList.prototype.forEach = Array.prototype.forEach;
 	}
 
-	var VERSION        = '20180520.1',
+	var VERSION        = '20180522.1',
 	    originalCookie = document.cookie, // For future use
 	    mainContainer,
 	    /*
@@ -62,7 +62,7 @@ window.EUCookieLaw = function ( settings ) {
 		    }
 	    };
 
-	var DEBUG         = settings.debugEnabled || false,
+	var DEBUG         = false,
 	    instanceId    = parseInt( Math.random() * 100000 ),
 	    currentDialog = null,
 	    initialScroll = 0;
@@ -132,12 +132,14 @@ window.EUCookieLaw = function ( settings ) {
 				    }
 			    },
 			    'SCRIPT': {
-				    attr: {
+				    attr:            {
 					    /*
 					     * Do nothing
 					     */
 					    src: 'about:blank'
-				    }
+				    },
+				    removeContent:   true,
+				    lookupInnerText: true
 			    },
 			    'LINK':   {
 				    attr: {
@@ -181,20 +183,24 @@ window.EUCookieLaw = function ( settings ) {
 		    dialogBuilder: {
 			    // dialog container
 			    id:      'dialog-container',
-			    html:    '<div data-eucookielaw-id="{{id}}" id="eucookielaw-{{instanceId}}" class="modal fade eucookielaw-modal">{{content}}</div>',
+			    html:    '<div data-eucookielaw-id="{{id}}" id="eucookielaw-{{instanceId}}" class="modal fade eucookielaw-modal {{classes}}">{{content}}</div>',
+			    classes: '',
 			    content: {
 				    // Dialog
 				    id:      'dialog',
-				    html:    '<div data-eucookielaw-id="{{id}}" class="modal-dialog modal-lg">{{content}}</div>',
+				    html:    '<div data-eucookielaw-id="{{id}}" class="modal-dialog modal-lg {{classes}}">{{content}}</div>',
+				    classes: '',
 				    content: {
 					    // Dialog Content
 					    id:      'dialog-content',
-					    html:    '<div data-eucookielaw-id="{{id}}" class="modal-content">{{content}}</div>',
+					    html:    '<div data-eucookielaw-id="{{id}}" class="modal-content {{classes}}">{{content}}</div>',
+					    classes: '',
 					    content: [
 						    {
 							    // Header Container
 							    id:       'header-container',
-							    html:     '<div data-eucookielaw-id="{{id}}" class="modal-header"><{{titleTag}} class="modal-title">{{content}}</{{titleTag}}></div>',
+							    html:     '<div data-eucookielaw-id="{{id}}" class="modal-header {{classes}}"><{{titleTag}} class="modal-title">{{content}}</{{titleTag}}></div>',
+							    classes: '',
 							    titleTag: 'strong',
 							    content:  'Cookie Policy agreement'
 						    },
@@ -205,12 +211,14 @@ window.EUCookieLaw = function ( settings ) {
 							    content: [
 								    {
 									    id:      'body-text-content',
-									    html:    '<p data-eucookielaw-id="{{id}}">{{content}}</p>',
+									    html:    '<p data-eucookielaw-id="{{id}}" class="{{classes}}">{{content}}</p>',
+									    classes: '',
 									    content: 'This site uses cookies'
 								    },
 								    {
 									    id:      'body-button-container',
-									    html:    '<p data-eucookielaw-id="{{id}}" class="eucokielaw-dialog-button-container">{{content}}</p>',
+									    html:    '<p data-eucookielaw-id="{{id}}" class="eucokielaw-dialog-button-container {{classes}}">{{content}}</p>',
+									    classes: '',
 									    content: {
 										    id:                    'review-button',
 										    // Expand Button
@@ -223,7 +231,8 @@ window.EUCookieLaw = function ( settings ) {
 								    {
 									    // Cookie Groups List
 									    id:                     'cookie-group-list',
-									    html:                   '<div data-eucookielaw-id="{{id}}" class="list-group">{{content}}</div>',
+									    html:                   '<div data-eucookielaw-id="{{id}}" class="list-group {{classes}}">{{content}}</div>',
+									    classes: '',
 									    isCookieGroupContainer: true,
 									    content:                {
 										    // Cookie Group List Item
@@ -236,12 +245,14 @@ window.EUCookieLaw = function ( settings ) {
 								    },
 								    {
 									    id:      'button-container',
-									    html:    '<div data-eucookielaw-id="{{id}}" class="buttons text-right">{{content}}</div>',
+									    html:    '<div data-eucookielaw-id="{{id}}" class="buttons text-right {{classes}}">{{content}}</div>',
+									    classes: '',
 									    content: [
 										    {
 											    id:            'close-button',
 											    isCloseButton: true,
-											    html:          '<a data-dismiss="modal" data-eucookielaw-id="{{id}}" href="#" class="btn btn-primary">{{content}}</a>',
+											    html:          '<a data-dismiss="modal" data-eucookielaw-id="{{id}}" href="#" class="btn btn-primary {{classes}}">{{content}}</a>',
+											    classes: '',
 											    content:       'Close'
 										    }
 									    ]
@@ -254,7 +265,7 @@ window.EUCookieLaw = function ( settings ) {
 							    html:    '<div data-eucookielaw-id="{{id}}" class="modal-footer">{{content}}</div>',
 							    content: {
 								    html:    '<div class="eucookielaw-dialog-footer">{{content}}</div>',
-								    content: '<small>Powered by <a href="https://diegolamonica.info">EUCookieLaw <img src="data:image/png;base64,iVBO' +
+								    content: '<small>Powered by <a href="https://diegolamonica.info/tools/eucookielaw/">EUCookieLaw <img src="data:image/png;base64,iVBO' +
 								             'Rw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAA' +
 								             'AELElEQVQ4jY3UT0ibdxzH8feTJ08e85fUJyYxsWal082trsWDMhOcrjCZ2DWH0ZYd' +
 								             '2sNOxdMOhcIQBsXbYAhedll3XmG9CQUVVqSpTGjHaLLQBTpnTJ8GNf//Pf920WLdOv' +
@@ -317,6 +328,7 @@ window.EUCookieLaw = function ( settings ) {
 			settings[ setting ] = defaultSettings[ setting ];
 		}
 	}
+	DEBUG = settings.debugEnabled || false;
 
 
 	DEBUG && console.log( settings );
@@ -347,10 +359,10 @@ window.EUCookieLaw = function ( settings ) {
 	 * check if user has accepted for specific URLs group
 	 * and period is not expired
 	 */
-	function getGroupStatus( groupName ) {
-		var acceptedDate = localStorage.getItem( getAcceptedDateKey( groupName ) || false ),
+	function getGroupStatus ( groupName ) {
+		var acceptedDate   = localStorage.getItem( getAcceptedDateKey( groupName ) || false ),
 		    acceptedStatus = localStorage.getItem( getAcceptedStatusKey( groupName ) || false ),
-		    accepted     = false;
+		    accepted       = false;
 
 		if ( acceptedDate ) {
 
@@ -363,7 +375,7 @@ window.EUCookieLaw = function ( settings ) {
 			/*
 			 * Checking if the date is expired
 			 */
-			if( futureDate > (new Date()) ) {
+			if ( futureDate > (new Date()) ) {
 				accepted = acceptedStatus;
 			}
 
@@ -373,10 +385,11 @@ window.EUCookieLaw = function ( settings ) {
 	}
 
 	function isGroupAccepted ( groupName ) {
-		return getGroupStatus(groupName) === AgreementStatus.OK;
+		return getGroupStatus( groupName ) === AgreementStatus.OK;
 	}
+
 	function isGroupRejected ( groupName ) {
-		return getGroupStatus(groupName) === AgreementStatus.KO;
+		return getGroupStatus( groupName ) === AgreementStatus.KO;
 	}
 
 	/*
@@ -933,7 +946,7 @@ window.EUCookieLaw = function ( settings ) {
 			.addEventListener( 'click', function ( event ) {
 
 				// if ( settings.agreeMethod === EUCookieLaw.CHECK_MODE_ON_CONSENT ) {
-					deferredConsent();
+				deferredConsent();
 				// }
 				if ( typeof(jQuery) === 'undefined' || typeof(jQuery.fn.modal) === 'undefined' ) {
 					document.querySelector( 'body' ).classList.remove( 'modal-open' );
