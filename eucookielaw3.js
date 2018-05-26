@@ -16,13 +16,24 @@ window.EUCookieLaw = function ( settings ) {
 	if ( localStorage.getItem( 'eucookielaw-client-signature' ) === null ) {
 		localStorage.setItem( 'eucookielaw-client-signature', guid() );
 	}
-	/* Internet Explorer forEach polyfill on NodeList */
 
 	if ( !NodeList.prototype.forEach ) {
+		/* Internet Explorer forEach polyfill on NodeList */
 		NodeList.prototype.forEach = Array.prototype.forEach;
 	}
 
-	var VERSION        = '20180522.1',
+	if ( !Array.prototype.unique ) {
+		/* useful Unique function */
+		Array.prototype.unique = function () {
+			var newArray = [];
+			this.map( function ( item ) {
+				if ( newArray.indexOf( item ) === -1 ) newArray.push( item );
+			} );
+			return newArray;
+		};
+	}
+
+	var VERSION        = '20180526.1',
 	    originalCookie = document.cookie, // For future use
 	    mainContainer,
 	    /*
@@ -41,6 +52,13 @@ window.EUCookieLaw = function ( settings ) {
 	    },
 	    text           = function ( text ) {
 		    return document.createTextNode( text );
+	    },
+	    remove         = function ( e ) {
+		    e.parentNode.removeChild( e );
+	    },
+	    before         = function ( cloned, item ) {
+		    item.parentNode.insertBefore( cloned, item );
+		    return cloned;
 	    },
 	    append         = function ( container, item ) {
 		    container.appendChild( item );
@@ -67,20 +85,13 @@ window.EUCookieLaw = function ( settings ) {
 	    currentDialog = null,
 	    initialScroll = 0;
 
-	var sheet = (function () {
-		var style = element( "style" );
-		append( style, text( '' ) );
-		append( document.head, style );
-		return style.sheet;
-	})();
-
 
 	function consentOnScrollCB ( event ) {
 		if ( window.scrollY > initialScroll + settings.scrollTolerance ) {
 			window.removeEventListener( 'scroll', consentOnScrollCB );
 
 			all( '[data-eucookielaw-id="cookie-group-list-item"]', mainContainer ).forEach( function ( item ) {
-				console.log( this );
+				if(DEBUG) console.log( this );
 
 				item.classList.add( settings.dialogCookieItemApprovedClass );
 				item.classList.remove( settings.dialogCookieItemRejectedClass );
@@ -99,6 +110,7 @@ window.EUCookieLaw = function ( settings ) {
 		     * `true` allows the cookie to be writen before consent else just the ones defined in the whitelist (`cookieWhitelist`)
 		     */
 		    cookieEnabled:   false,
+		    runLegacyMode:   true,
 		    cookieWhiteList: [],
 
 		    /*
@@ -112,12 +124,16 @@ window.EUCookieLaw = function ( settings ) {
 		     * This setting can be given to EUCookieLaw through startup settings and can be changed at run-time
 		     * using the `setAgreeMode` method.
 		     */
-		    agreeMethod:     EUCookieLaw.CHECK_MODE_IMMEDIATE,
-		    scrollTolerance: 200,
+		    agreeMethod:       EUCookieLaw.CHECK_MODE_IMMEDIATE,
+		    scrollTolerance:   200,
+		    /*
+		     * Should EUCookieLaw set the minimal style for elements?
+		     */
+		    applyMinimalStyle: true,
 		    /*
 		     * Contains the details about each managed node and how to vaule its attributes on replacement.
 		     */
-		    handledNodes:    {
+		    handledNodes:      {
 			    'IFRAME': {
 				    attr: {
 					    src: 'about:blank'
@@ -161,7 +177,7 @@ window.EUCookieLaw = function ( settings ) {
 					     * If one of them is not loaded uses the DOM manipulation to emulate the same behavior
 					     */
 					    item.classList.add( 'in' );
-					    item.style.display = 'block';
+					    // item.style.display = 'block';
 					    document.querySelector( 'body' ).classList.add( 'modal-open' );
 
 				    }
@@ -200,7 +216,7 @@ window.EUCookieLaw = function ( settings ) {
 							    // Header Container
 							    id:       'header-container',
 							    html:     '<div data-eucookielaw-id="{{id}}" class="modal-header {{classes}}"><{{titleTag}} class="modal-title">{{content}}</{{titleTag}}></div>',
-							    classes: '',
+							    classes:  '',
 							    titleTag: 'strong',
 							    content:  'Cookie Policy agreement'
 						    },
@@ -232,7 +248,7 @@ window.EUCookieLaw = function ( settings ) {
 									    // Cookie Groups List
 									    id:                     'cookie-group-list',
 									    html:                   '<div data-eucookielaw-id="{{id}}" class="list-group {{classes}}">{{content}}</div>',
-									    classes: '',
+									    classes:                '',
 									    isCookieGroupContainer: true,
 									    content:                {
 										    // Cookie Group List Item
@@ -252,7 +268,7 @@ window.EUCookieLaw = function ( settings ) {
 											    id:            'close-button',
 											    isCloseButton: true,
 											    html:          '<a data-dismiss="modal" data-eucookielaw-id="{{id}}" href="#" class="btn btn-primary {{classes}}">{{content}}</a>',
-											    classes: '',
+											    classes:       '',
 											    content:       'Close'
 										    }
 									    ]
@@ -333,13 +349,21 @@ window.EUCookieLaw = function ( settings ) {
 
 	DEBUG && console.log( settings );
 
-	/*
-	 * Defining specific rules for reject and approve items
-	 */
-	sheet.insertRule( '#eucookielaw-' + instanceId + ' .' + settings.dialogCookieItemRejectedClass + ',#eucookielaw-' + instanceId + ' .' + settings.dialogCookieItemApprovedClass + '{	cursor: pointer; }', 0 );
-	sheet.insertRule( '#eucookielaw-' + instanceId + ' .' + settings.dialogCookieItemRejectedClass + ':before { content: "×"; color: #a00; }', 0 );
-	sheet.insertRule( '#eucookielaw-' + instanceId + ' .' + settings.dialogCookieItemApprovedClass + ':before { content: "✓"; color: #080; }', 0 );
+	if ( settings.applyMinimalStyle ) {
+		/*
+		 * Defining specific rules for reject and approve items
+		 */
+		var sheet = (function () {
+			var style = element( "style" );
+			append( style, text( '' ) );
+			append( document.head, style );
+			return style.sheet;
+		})();
 
+		sheet.insertRule( '#eucookielaw-' + instanceId + ' .' + settings.dialogCookieItemRejectedClass + ',#eucookielaw-' + instanceId + ' .' + settings.dialogCookieItemApprovedClass + '{	cursor: pointer; }', 0 );
+		sheet.insertRule( '#eucookielaw-' + instanceId + ' .' + settings.dialogCookieItemRejectedClass + ':before { content: "×"; color: #a00; }', 0 );
+		sheet.insertRule( '#eucookielaw-' + instanceId + ' .' + settings.dialogCookieItemApprovedClass + ':before { content: "✓"; color: #080; }', 0 );
+	}
 	var handledNodes = settings.handledNodes;
 	var avoidedURLs = {};
 
@@ -382,6 +406,10 @@ window.EUCookieLaw = function ( settings ) {
 		}
 
 		return accepted;
+	}
+
+	function isGroupTreated ( groupName ) {
+		return isGroupAccepted( groupName ) || isGroupRejected( groupName );
 	}
 
 	function isGroupAccepted ( groupName ) {
@@ -439,14 +467,14 @@ window.EUCookieLaw = function ( settings ) {
 					if ( defer ) cloned.setAttribute( 'defer', defer );
 					if ( src ) cloned.setAttribute( 'src', src );
 
-					item.parentNode.insertBefore( cloned, item );
+					before( cloned, item );
 					item.remove();
 
 					item = cloned;
 
 				}
 			}
-
+			if ( DEBUG ) console.log( 'Approved group', groupName );
 			if ( text !== '' ) {
 				item.innerText = text;
 				item.removeAttribute( 'data-eucookielaw-inner-text' );
@@ -487,13 +515,18 @@ window.EUCookieLaw = function ( settings ) {
 	function getGroupByURL ( URL ) {
 		DEBUG && console.log( 'getGroupByURL', 'checking for', URL );
 		for ( var groupName in avoidedURLs ) {
-			DEBUG && console.log( 'analyzing', groupName, avoidedURLs[ groupName ] );
-			for ( var avoidedURLIndex in avoidedURLs[ groupName ].URL ) {
-				var avoidedURL = avoidedURLs[ groupName ].URL[ avoidedURLIndex ];
-				DEBUG && console.log( 'getGroupByURL', 'testing for', avoidedURL );
-				var rx = mkRegExp( avoidedURL, '^' );
-				if ( rx.test( URL ) ) {
-					return groupName;
+			if ( avoidedURLs.hasOwnProperty( groupName ) ) {
+				DEBUG && console.log( 'analyzing', groupName, avoidedURLs[ groupName ] );
+				for ( var avoidedURLIndex in avoidedURLs[ groupName ].URL ) {
+					if ( avoidedURLs[ groupName ].URL.hasOwnProperty( avoidedURLIndex ) ) {
+						var avoidedURL = avoidedURLs[ groupName ].URL[ avoidedURLIndex ],
+						    rx         = mkRegExp( avoidedURL, '^' );
+
+						DEBUG && console.log( 'getGroupByURL', 'testing for', avoidedURL, rx );
+						if ( rx.test( URL ) ) {
+							return groupName;
+						}
+					}
 				}
 			}
 		}
@@ -502,19 +535,22 @@ window.EUCookieLaw = function ( settings ) {
 	}
 
 	function getGroupByContent ( content ) {
+		if ( content !== '' ) {
+			for ( var groupName in avoidedURLs ) {
+				if ( avoidedURLs.hasOwnProperty( groupName ) ) {
+					for ( var avoidedURLIndex in avoidedURLs[ groupName ].URL ) {
+						if ( avoidedURLs[ groupName ].URL.hasOwnProperty( avoidedURLIndex ) ) {
+							var avoidedURL = avoidedURLs[ groupName ].URL[ avoidedURLIndex ];
 
-		for ( var groupName in avoidedURLs ) {
-
-			for ( var avoidedURLIndex in avoidedURLs[ groupName ].URL ) {
-				var avoidedURL = avoidedURLs[ groupName ].URL[ avoidedURLIndex ];
-
-				var rx = mkRegExp( avoidedURL );
-				if ( rx.test( content ) ) {
-					return groupName;
+							var rx = mkRegExp( avoidedURL );
+							if ( rx.test( content ) ) {
+								return groupName;
+							}
+						}
+					}
 				}
 			}
 		}
-
 		return false;
 	}
 
@@ -542,6 +578,18 @@ window.EUCookieLaw = function ( settings ) {
 			}
 		}
 
+	}
+
+	function closeModal ( fromButton ) {
+		if ( typeof(jQuery) === 'undefined' || typeof(jQuery.fn.modal) === 'undefined' ) {
+			document.querySelector( 'body' ).classList.remove( 'modal-open' );
+			mainContainer.classList.remove( 'in' );
+			// mainContainer.style.display = 'none';
+		} else if ( !fromButton ) {
+
+			$( currentDialog ).modal( 'hide' );
+
+		}
 	}
 
 	function enableCookies () {
@@ -627,13 +675,14 @@ window.EUCookieLaw = function ( settings ) {
 		settings.agreeMethod = mode;
 	};
 
-	this.registerGroup = function ( groupId, groupName, groupDescription ) {
+	this.registerGroup = function ( groupId, groupName, groupDescription, enabledByDefault ) {
 		if ( avoidedURLs[ groupId ] === undefined ) {
 			avoidedURLs[ groupId ] = {
-				name:        groupName,
-				description: groupDescription,
-				accepted:    isGroupAccepted( groupId ),
-				URL:         []
+				name:             groupName,
+				description:      groupDescription,
+				accepted:         isGroupAccepted( groupId ),
+				enabledByDefault: enabledByDefault,
+				URL:              []
 			};
 		}
 	};
@@ -657,7 +706,10 @@ window.EUCookieLaw = function ( settings ) {
 
 	this.handleNode = function ( nodeName, attributes, contentManagement ) {
 		DEBUG && console.log( 'adding handler for', nodeName, contentManagement );
-		settings.handledNodes[ nodeName ] = {
+		/*
+		 * Ensure the node is stores as uppecase to avoid duplicates and incorrect representations
+		 */
+		settings.handledNodes[ nodeName.toUpperCase() ] = {
 			attr:            attributes,
 			removeContent:   contentManagement.removeContent,
 			lookupInnerText: contentManagement.lookupContent
@@ -678,12 +730,32 @@ window.EUCookieLaw = function ( settings ) {
 	};
 
 
+	function getAllHandledAttributes () {
+		var theAttributes = [];
+		for ( var nodeName in settings.handledNodes ) {
+			var node       = settings.handledNodes[ nodeName ],
+			    attributes = Object.keys( node.attr || {} );
+
+			attributes.forEach( function ( item ) {
+				theAttributes.push( item );
+			} );
+		}
+
+
+		return theAttributes.unique();
+	}
+
 	function startObserver () {
+		if(DEBUG) console.log( getAllHandledAttributes() );
 		var config     = {
-			    attributes:      true,
-			    childList:       true,
-			    subtree:         true,
-			    attributeFilter: [ 'src', 'href' ]
+			    attributes:            true,
+			    characterData:         true,
+			    childList:             true,
+			    subtree:               true,
+			    attributeOldValue:     true,
+			    characterDataOldValue: true,
+			    attributeFilter:       getAllHandledAttributes()
+
 		    },
 		    targetNode = one( 'html' );
 		// Create an observer instance linked to the callback function
@@ -691,6 +763,7 @@ window.EUCookieLaw = function ( settings ) {
 
 		// Start observing the target node for configured mutations
 		observer.observe( targetNode, config );
+
 	}
 
 	function alterNode ( node, asGroupId ) {
@@ -701,6 +774,8 @@ window.EUCookieLaw = function ( settings ) {
 			    handledNode = handledNodes[ nodeName ] || false;
 
 			if ( handledNode ) {
+				// node.parentNode.removeChild(node);return;
+
 				var shouldRemoveContent = false;
 				for ( var attr in handledNode.attr ) {
 
@@ -727,7 +802,7 @@ window.EUCookieLaw = function ( settings ) {
 										// Evenif the src has been changed the content is still loaded.
 										// So we need to replace it with new html content.
 										node.onreadystatechange = function ( event ) {
-											console.log( 'starting to load', this, event );
+											if(DEBUG) console.log( 'this is loading', this, event );
 											return false;
 										};
 										var theNode   = element( nodeName ),
@@ -736,8 +811,10 @@ window.EUCookieLaw = function ( settings ) {
 											var oldNodeAttr = node.attributes[ oldNodeAttrIndex ];
 											theNode.setAttribute( oldNodeAttr.name, oldNodeAttr.value );
 										}
+										// console.log('dropping out', node);
 										theParent.insertBefore( theNode, node );
 										theParent.removeChild( node );
+										node = null;
 										node = theNode;
 
 									}
@@ -777,7 +854,6 @@ window.EUCookieLaw = function ( settings ) {
 					}
 				}
 
-
 			}
 
 
@@ -796,25 +872,25 @@ window.EUCookieLaw = function ( settings ) {
 			DEBUG && console.group( 'mutationObserverCallback' );
 			DEBUG && console.log( 'starting' );
 			insideObserver = true;
-			for ( var mutationIndex = 0; mutationIndex < mutationsList.length; mutationIndex++ ) {
-				var mutation = mutationsList[ mutationIndex ];
+
+			mutationsList.forEach( function ( mutation ) {
 				if ( mutation.type === 'childList' ) {
 
 					for ( var addedNodeIndex = 0; addedNodeIndex < mutation.addedNodes.length; addedNodeIndex++ ) {
 						var addedNode = mutation.addedNodes[ addedNodeIndex ];
 						alterNode( addedNode );
 					}
-
-
 				}
 				else if ( mutation.type === 'attributes' ) {
-					console.log( 'The ' + mutation.attributeName + ' attribute was modified into ', mutation.target[ mutation.attributeName ] );
+					if(DEBUG) console.log( 'The ' + mutation.attributeName + ' attribute was modified from ' + mutation.oldValue + ' into ', mutation.target[ mutation.attributeName ] );
 				}
-			}
+			} );
+
 			insideObserver = false;
 			DEBUG && console.groupEnd();
 		}
 	};
+
 	var htmlBuilderReservedWords = [ 'html', 'isCookieGroupContainer', 'isAgreeButton', 'isCloseButton', 'isCookieDetailsButton' ];
 	linearizeDialogPropeties( settings );
 
@@ -845,7 +921,6 @@ window.EUCookieLaw = function ( settings ) {
 			}
 		}
 
-
 		return buffer;
 
 	};
@@ -855,10 +930,10 @@ window.EUCookieLaw = function ( settings ) {
 		all( '[data-eucookielaw-id="cookie-group-list-item"]' ).forEach( function ( item ) {
 			var groupId = item.getAttribute( 'data-group' );
 			if ( item.classList.contains( settings.dialogCookieItemApprovedClass ) ) {
-				console.log( groupId, 'has been accepted' );
+				if ( DEBUG ) console.log( groupId, 'has been accepted' );
 				acceptGroup( groupId );
 			} else {
-				console.log( groupId, 'has been revoked' );
+				if ( DEBUG ) console.log( groupId, 'has been revoked' );
 				revokeGroup( groupId );
 			}
 		} );
@@ -884,7 +959,7 @@ window.EUCookieLaw = function ( settings ) {
 		for ( var groupId in avoidedURLs ) {
 			// Cloning item
 			var cookieItemSectionCloned = JSON.parse( JSON.stringify( cookieItemSection ) );
-			cookieItemSectionCloned.status = isGroupAccepted( groupId ) ?
+			cookieItemSectionCloned.status = isGroupAccepted( groupId ) || !isGroupTreated( groupId ) && avoidedURLs[ groupId ].enabledByDefault ?
 			                                 settings.dialogCookieItemApprovedClass :
 			                                 settings.dialogCookieItemRejectedClass;
 			cookieItemSectionCloned.content = avoidedURLs[ groupId ].name;
@@ -917,7 +992,7 @@ window.EUCookieLaw = function ( settings ) {
 			(function ( item ) {
 				item.setAttribute( 'data-group', groupListItems[ index ].group );
 				item.addEventListener( 'click', function ( event ) {
-					DEBUG && console.log( 'firing click event', this );
+					if ( DEBUG ) console.log( 'firing click event', this );
 					event.preventDefault();
 					event.stopImmediatePropagation();
 					if ( settings.agreeMethod === EUCookieLaw.CHECK_MODE_IMMEDIATE || settings.agreeMethod === EUCookieLaw.CHECK_MODE_ON_SCROLL ) {
@@ -934,44 +1009,51 @@ window.EUCookieLaw = function ( settings ) {
 			})( item );
 		} );
 
+		var theGroupListClasses = one( '[data-eucookielaw-id="cookie-group-list"]', mainContainer ).classList;
+
 		one( '[data-eucookielaw-id="review-button"]', mainContainer )
 			.addEventListener( 'click', function ( event ) {
 				event.preventDefault();
 				event.stopImmediatePropagation();
-				one( '[data-eucookielaw-id="cookie-group-list"]', mainContainer )
-					.classList.toggle( settings.dialogCookieGroupsListHiddenClass );
+				theGroupListClasses.toggle( settings.dialogCookieGroupsListHiddenClass );
+				theGroupListClasses.toggle( 'expanded' );
+				theGroupListClasses.toggle( 'collapsed' );
 			} );
 
 		one( '[data-eucookielaw-id="close-button"]', mainContainer )
 			.addEventListener( 'click', function ( event ) {
 
-				// if ( settings.agreeMethod === EUCookieLaw.CHECK_MODE_ON_CONSENT ) {
 				deferredConsent();
-				// }
-				if ( typeof(jQuery) === 'undefined' || typeof(jQuery.fn.modal) === 'undefined' ) {
-					document.querySelector( 'body' ).classList.remove( 'modal-open' );
-					mainContainer.classList.remove( 'in' );
-					mainContainer.style.display = 'none';
-				}
-
+				closeModal( true );
 
 			} );
-
 		if ( settings.dialogCookieGroupsListDefaultIsHidden ) {
-			one( '[data-eucookielaw-id="cookie-group-list"]', mainContainer )
-				.classList.add( settings.dialogCookieGroupsListHiddenClass );
+			[ settings.dialogCookieGroupsListHiddenClass, 'collapsed' ].forEach( function ( item ) {
+				theGroupListClasses.add( item );
+			} );
+		} else {
+			theGroupListClasses.add( 'expanded' );
 		}
 
 		if ( settings.agreeMethod === EUCookieLaw.CHECK_MODE_ON_SCROLL ) {
 			window.addEventListener( 'scroll', consentOnScrollCB );
 		}
 	};
-	blockCookie();
-	startObserver();
 
+	this.run = function () {
+		blockCookie();
+		startObserver();
+	};
+
+
+	if ( settings.runLegacyMode ) {
+		console.info( 'Running in Legacy Mode, please regenerate configuration through builder https://diegolamonica.info/tools/eucookielaw/builder/' );
+		this.run();
+	}
 
 	var that = this;
 	document.addEventListener( 'DOMContentLoaded', function () {
+
 		var mustShowDialog = false;
 		initialScroll = window.scrollY;
 		for ( var groupName in avoidedURLs ) {
@@ -991,18 +1073,19 @@ window.EUCookieLaw = function ( settings ) {
 
 	} );
 
-	var clicked = false;
-	document.addEventListener( 'click', function () {
-		console.log( settings.agreeMethod );
-		if ( !clicked && settings.agreeMethod === EUCookieLaw.CHECK_MODE_ON_CLICK ) {
+
+	document.addEventListener( 'click', function ( event ) {
+		if(DEBUG) console.log( settings.agreeMethod, event );
+		if ( settings.agreeMethod === EUCookieLaw.CHECK_MODE_ON_CLICK &&
+			!document.querySelector( '.eucookielaw-modal' ).contains( event.target ) ) {
 
 			deferredConsent();
-			settings.agreeMethod = EUCookieLaw.CHECK_MODE_ON_CONSENT;
+			closeModal();
+			settings.agreeMethod = EUCookieLaw.CHECK_MODE_IMMEDIATE;
+
 		}
 
-		clicked = true;
 	} );
-
 
 };
 

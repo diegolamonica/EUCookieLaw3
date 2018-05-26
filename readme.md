@@ -78,6 +78,10 @@ To let EUCookieLaw to work properly in your web site you must include and initia
 
 The initialization method `new EUCookieLaw()` expects optionally a settings argument in JSON format.
 
+#### `runLegacyMode`
+By default is `true` to grant the backcompatibility with previous version of EUCookieLaw3.
+If set to false, EUCookieLaw3 will not start to observe the content of the page since the script will invoke the `run` method.
+
 #### `expiringPeriod`
 
 Accepts an integer value that defines the number of days before the agreement expires.
@@ -223,6 +227,10 @@ Default value for this property is `rejected`.
 
 ### Public Methods
 
+#### `run( )`
+
+Invoking it will make EUCookieLaw3 able to observe the page changes.
+
 #### `allowCookie( cookieName )`
 
 This method allows you to add specific cookie to the whitelist according to the [`cookieWhiteList`](#cookieWhiteList) rules.
@@ -231,7 +239,7 @@ This method allows you to add specific cookie to the whitelist according to the 
 
 This method allows you to set the `agreeMethod`.
 
-#### `registerGroup( id, name, description)`
+#### `registerGroup( id, name, description, enabledByDefault)`
 
 Through this method you can create an informative consent group.
 
@@ -242,6 +250,8 @@ Through this method you can create an informative consent group.
 * `name` is the human readable version of the groupId, it's merely descriptive and should be short (eg. *Facebook Social Widget*)
  
 * `description` is the full explained version of the name.
+
+* `enabledByDefault` is a boolean value that allow to set as enabled the treatment when the user reach the site for the first time.
  
  This method works in bundle with `registerURL` method.
  
