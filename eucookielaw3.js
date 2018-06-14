@@ -199,7 +199,7 @@ window.EUCookieLaw = function ( settings ) {
 		    dialogBuilder: {
 			    // dialog container
 			    id:      'dialog-container',
-			    html:    '<div data-eucookielaw-id="{{id}}" id="eucookielaw-{{instanceId}}" class="modal fade eucookielaw-modal {{classes}}">{{content}}</div>',
+			    html:    '<div data-eucookielaw-id="{{id}}" id="eucookielaw-{{instanceId}}" class="modal fade eucookielaw-modal {{classes}}" role="dialog" tabindex="-1">{{content}}</div>',
 			    classes: '',
 			    content: {
 				    // Dialog
@@ -979,6 +979,11 @@ window.EUCookieLaw = function ( settings ) {
 		append( eucookielawContainer, div );
 
 		mainContainer = div.firstChild;
+		/*
+		 * bootstrap modal need the dialog element is already attached to the document.
+		 * This is the reason to append mainContainer before invoking the openCallback method.
+		 */
+		one( 'body' ).appendChild( mainContainer );
 
 		if ( settings.openCallback && settings.openCallback( mainContainer ) ) {
 		} else {
@@ -986,7 +991,6 @@ window.EUCookieLaw = function ( settings ) {
 
 		}
 
-		one( 'body' ).appendChild( mainContainer );
 		currentDialog = mainContainer;
 		all( '[data-eucookielaw-id="cookie-group-list-item"]', mainContainer ).forEach( function ( item, index ) {
 			(function ( item ) {
