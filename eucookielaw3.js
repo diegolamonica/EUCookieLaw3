@@ -33,7 +33,7 @@ window.EUCookieLaw = function ( settings ) {
 		};
 	}
 
-	var VERSION        = '20180526.1',
+	var VERSION        = '20180614',
 	    originalCookie = document.cookie, // For future use
 	    mainContainer,
 	    /*
